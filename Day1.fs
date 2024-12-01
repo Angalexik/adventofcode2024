@@ -4,22 +4,22 @@ open AdventUtils
 open System
 
 let parse1 (text: string) =
-    let rec parseLines (l1, l2) (lines: string list) =
-        match lines with
-        | [] -> (l1, l2)
-        | (line :: ls) ->
-            let (e1, e2) =
-                line.Split("   ")
-                |> Array.toList
-                |> List.map int
-                |> List.take 2
-                |> function
-                    | [ e1; e2 ] -> (e1, e2)
-                    | _ -> failwith "Unreachable!"
+    let parseLines' =
+        List.fold
+            (fun (l1, l2) (line: string) ->
+                let (e1, e2) =
+                    line.Split("   ")
+                    |> Array.toList
+                    |> List.map int
+                    |> List.take 2
+                    |> function
+                        | [ e1; e2 ] -> (e1, e2)
+                        | _ -> failwith "Unreachable!"
 
-            parseLines (e1 :: l1, e2 :: l2) ls
+                (e1 :: l1, e2 :: l2))
+            ([], [])
 
-    text.Split('\n') |> Array.toList |> parseLines ([], [])
+    text.Split('\n') |> Array.toList |> parseLines'
 
 let solve1 (list1, list2) =
     let sorted1 = List.sort list1
@@ -29,12 +29,10 @@ let solve1 (list1, list2) =
     |> List.sumBy (fun ((e1, e2): int * int) -> Math.Abs(e1 - e2))
 
 let solve2 (list1, list2) =
-    let rec occurences num list e =
-        match list with
-        | [] -> num
-        | (x :: xs) -> occurences (if e = x then num + 1 else num) xs e
+    let occurences list e =
+        List.fold (fun acc curr -> if curr = e then acc + 1 else acc) 0 list
 
-    List.sumBy (fun e1 -> e1 * occurences 0 list2 e1) list1
+    List.sumBy (fun e1 -> e1 * occurences list2 e1) list1
 
 let test () =
     let solution = (dayTestInputs 1).[0] |> parse1 |> solve2
