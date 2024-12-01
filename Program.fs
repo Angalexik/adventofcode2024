@@ -1,3 +1,3 @@
-﻿Day99.test()
-Day99.part1()
-Day99.part2()
+﻿Day1.test()
+Day1.part1()
+Day1.part2()
