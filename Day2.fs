@@ -4,34 +4,28 @@ open AdventUtils
 open System
 
 let processReport (report: string array) =
-    let rec isValid (valid: bool) decreasing prev data =
-        match valid with
-        | false -> false
-        | true ->
-            match data with
-            | [] -> valid
-            | (x :: xs) ->
-                match prev with
-                | None -> isValid valid None (Some x) xs
-                | Some(prev) ->
-                    let diff = prev - x
+    // There's probably a way to do this with Array.pairwise, but I can't see it
+    let rec isValid valid decreasing data =
+        match (valid, data) with
+        | false, _ -> false
+        | true, [] -> true
+        | true, [ _ ] -> true
+        | true, (x :: y :: xs) ->
+            let diff = x - y
+            let withinRange = diff <> 0 && (Math.Abs diff <= 3)
 
-                    let currentlyDecreasing =
-                        match diff with
-                        | neg when neg < 0 -> false
-                        | pos when pos > 0 -> true
-                        | 0 -> true // doesn't really matter
+            let currentlyDecreasing =
+                match diff with
+                | neg when neg < 0 -> false
+                | pos when pos > 0 -> true
+                | 0 -> true // doesn't really matter
 
-                    match decreasing with
-                    | None -> isValid (diff <> 0 && (Math.Abs diff <= 3)) (Some currentlyDecreasing) (Some x) xs
-                    | Some(decreasing) ->
-                        isValid
-                            (diff <> 0 && (Math.Abs diff <= 3) && decreasing = currentlyDecreasing)
-                            (Some decreasing)
-                            (Some x)
-                            xs
+            let consistent =
+                currentlyDecreasing = (Option.defaultValue currentlyDecreasing decreasing)
 
-    report |> Array.map int |> Array.toList |> isValid true None None
+            isValid (withinRange && consistent) (Some currentlyDecreasing) (y :: xs)
+
+    report |> Array.map int |> Array.toList |> isValid true None
 
 let removeElement at array =
     array
@@ -39,7 +33,8 @@ let removeElement at array =
     |> Array.choose (fun (keep, e) -> if keep then Some e else None)
 
 let parse =
-    (fun (t: string) -> t.Split('\n')) >> Array.map (fun (l: string) -> l.Split(" "))
+    (fun (t: string) -> t.Split('\n'))
+    >> Array.map (fun (l: string) -> l.Split(" "))
 
 let solve1 input =
     input |> Array.filter processReport |> _.Length
@@ -47,7 +42,12 @@ let solve1 input =
 let solve2 input =
     let isSafeWithRemoved report =
         let count = Array.length report
-        Array.replicate count report |> Array.mapi removeElement |> Array.exists processReport
+
+        report
+        |> Array.replicate count
+        |> Array.mapi removeElement
+        |> Array.exists processReport
+
     let either f g x = f x || g x
     input |> Array.filter (either processReport isSafeWithRemoved) |> _.Length
 
