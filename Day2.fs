@@ -4,28 +4,21 @@ open AdventUtils
 open System
 
 let processReport (report: string array) =
-    // There's probably a way to do this with Array.pairwise, but I can't see it
-    let rec isValid valid decreasing data =
-        match (valid, data) with
-        | false, _ -> false
-        | true, [] -> true
-        | true, [ _ ] -> true
-        | true, (x :: y :: xs) ->
-            let diff = x - y
-            let withinRange = diff <> 0 && (Math.Abs diff <= 3)
+    let isValid' (valid, decreasing) (x, y) =
+        let diff = x - y
+        let withinRange = diff <> 0 && (Math.Abs diff <= 3)
+        let currentlyDecreasing = diff > 0
 
-            let currentlyDecreasing =
-                match diff with
-                | neg when neg < 0 -> false
-                | pos when pos > 0 -> true
-                | 0 -> true // doesn't really matter
+        match (valid, decreasing) with
+        | false, _ -> (false, None)
+        | true, Some(dec) -> (withinRange && currentlyDecreasing = dec, decreasing)
+        | true, None -> (withinRange, Some(currentlyDecreasing))
 
-            let consistent =
-                currentlyDecreasing = (Option.defaultValue currentlyDecreasing decreasing)
-
-            isValid (withinRange && consistent) (Some currentlyDecreasing) (y :: xs)
-
-    report |> Array.map int |> Array.toList |> isValid true None
+    report
+    |> Array.map int
+    |> Array.pairwise
+    |> Array.fold isValid' (true, None)
+    |> fst
 
 let removeElement at array =
     array
