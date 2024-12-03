@@ -13,7 +13,7 @@ let dbg value =
     value
 
 let dayInput day : string =
-    File.ReadAllLines $"inputs/day{day.ToString()}.txt"
+    File.ReadAllLines $"inputs/real/day{day.ToString()}.txt"
     |> (fun lines -> String.Join("\n", lines))
 
 let dayTestInputs day : string array =
