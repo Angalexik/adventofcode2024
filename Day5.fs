@@ -2,13 +2,31 @@ module Day5
 
 open AdventUtils
 open System
+open Utils.Text
+
+// https://wiki.haskell.org/Introduction#Quicksort_in_Haskell
+let rec sorted (cmp: 'a -> 'a -> bool) list =
+    match list with
+    | [] -> []
+    | (x :: xs) ->
+        let before = List.filter (cmp x) xs
+        let after = List.filter ((cmp x) >> not) xs
+        (sorted (cmp) after) @ [ x ] @ (sorted (cmp) before)
+
+let isSorted cmp list = list = (sorted cmp list)
+
+let middle (list: 'a list) = list.[list.Length / 2]
+
+let isBefore ordering x y =
+    ordering
+    |> List.filter (fun (before, _) -> before = x)
+    |> List.exists (fun (_, after) -> after = y)
 
 let parse1 (input: string) =
-    let [| ordering; updates |] = input.Split("\n\n")
+    let ordering, updates = splitOnce "\n\n" input
 
     let parseOrderingRow (row: string) =
-        let [| p1; p2 |] = row.Split("|") |> Array.map int
-        (p1, p2)
+        splitOnce "|" row |> (fun (x, y) -> (int x, int y))
 
     let parseUpdatesRow (row: string) =
         row.Split(",") |> Array.map int |> Array.toList
@@ -17,48 +35,16 @@ let parse1 (input: string) =
     let updates = updates.Split("\n") |> Array.map parseUpdatesRow |> Array.toList
     (ordering, updates)
 
-let fNot f x = not (f x)
-
 let solve1 (ordering, updates: int list list) =
-    let isBefore x y =
-        ordering
-        |> List.filter (fun (before, _) -> before = x)
-        |> List.exists (fun (_, after) -> after = y)
+    let isBefore = isBefore ordering
 
-    let rec sorted (cmp: 'a -> 'a -> bool) list =
-        match list with
-        | [] -> []
-        | (x :: xs) ->
-            let before = List.filter (cmp x) xs
-            let after = List.filter (fNot (cmp x)) xs
-            (sorted (cmp) after) @ [ x ] @ (sorted (cmp) before)
-
-    let isSorted cmp list = list = (sorted cmp list)
-
-    let middle (list: 'a list) = list.[list.Length / 2]
-
-    updates |> List.filter (isSorted (isBefore)) |> List.sumBy middle
+    updates |> List.filter (isSorted isBefore) |> List.sumBy middle
 
 let solve2 (ordering, updates: int list list) =
-    let isBefore x y =
-        ordering
-        |> List.filter (fun (before, _) -> before = x)
-        |> List.exists (fun (_, after) -> after = y)
-
-    let rec sorted (cmp: 'a -> 'a -> bool) list =
-        match list with
-        | [] -> []
-        | (x :: xs) ->
-            let before = List.filter (cmp x) xs
-            let after = List.filter (fNot (cmp x)) xs
-            (sorted (cmp) after) @ [ x ] @ (sorted (cmp) before)
-
-    let isSorted cmp list = list = (sorted cmp list)
-
-    let middle (list: 'a list) = list.[list.Length / 2]
+    let isBefore = isBefore ordering
 
     updates
-    |> List.filter (fNot (isSorted (isBefore)))
+    |> List.filter (isSorted (isBefore) >> not)
     |> List.sumBy (sorted (isBefore) >> middle)
 
 let test () =
