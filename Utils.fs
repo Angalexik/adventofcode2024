@@ -3,7 +3,7 @@ module Utils
 open System.Text.RegularExpressions
 
 module Text =
-    let split separator (text: string) = text.Split(separator)
+    let split (separator: string) (text: string) = text.Split(separator)
 
     let splitOnce (separator: string) (text: string) =
         let pos = text.IndexOf(separator)
