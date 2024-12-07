@@ -8,7 +8,6 @@ let parse1 input =
     let parseLine line =
         let (result, eq) = splitOnce ": " line
         let eq = eq |> split " " |> Array.toList |> List.map int64
-        // printfn $"{result}"
         result |> int64, eq
 
     input |> split "\n" |> Array.toList |> List.map parseLine
