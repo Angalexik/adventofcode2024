@@ -14,9 +14,10 @@ let parse1 input =
 
 let isValid concat (result, eq) =
     let rec loop target numbers currentRes =
-        match numbers with
-        | [] -> currentRes = target
-        | (x :: xs) ->
+        match (numbers, currentRes) with
+        | _, r when r > target -> false
+        | [], _ -> currentRes = target
+        | (x :: xs), _ ->
             let added = currentRes + x
             let multiplied = currentRes * x
             let concated = currentRes.ToString() + x.ToString() |> int64
