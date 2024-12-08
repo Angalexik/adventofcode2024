@@ -8,8 +8,6 @@ let (++) (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
 
 let (--) (x1, y1) (x2, y2) = (x1 - x2, y1 - y2)
 
-let invert (x1, y1) = (-x1, -y1)
-
 // https://stackoverflow.com/a/1231711
 let rec comb n l =
     match n, l with
@@ -43,8 +41,6 @@ let solve1 (frequencies, bounds) =
         |> List.collect (fun [ a1; a2 ] -> [ a1 ++ (a1 -- a2); a2 ++ (a2 -- a1) ])
         |> List.filter (inBounds bounds)
 
-    // dbg ((5, 5) ++ ((5, 5) -- (4, 3))) |> ignore
-    // frequencies |> Map.map antinodesForFreq |> Seq.collect _.Value |> Set.ofSeq |> (Set.toList >> dbg >> Set.ofList) |> Set.count
     frequencies
     |> Map.map antinodesForFreq
     |> Seq.collect _.Value
