@@ -15,3 +15,7 @@ module Text =
 
     let indexesOf (subString: string) (text: string) =
         Regex.Matches(text, Regex.Escape(subString)) |> Seq.map _.Index
+
+    let chars (text: string) = text.ToCharArray()
+
+    let charToInt (c: char) = int c - int '0'
