@@ -17,17 +17,10 @@ let isFile id =
     | Empty -> false
     | Id(_) -> true
 
-let checkSum list =
-    list
-    |> List.indexed
-    |> List.sumBy (function
-        | (i, Id(id)) -> id * int64 i
-        | (_, Empty) -> failwith "Unreachable?")
-
-let checkSum' array =
-    array
-    |> Array.indexed
-    |> Array.sumBy (function
+let checkSum seq =
+    seq
+    |> Seq.indexed
+    |> Seq.sumBy (function
         | (i, Id(id)) -> id * int64 i
         | (_, Empty) -> 0)
 
@@ -72,9 +65,6 @@ let solve1 input =
             List.truncate (List.length list - 1) list |> loop
 
     loop input |> checkSum
-// let moveLastFileBlockToFirstEmptySpace list =
-//     let emptyIndex = List.findIndex ((=) Empty) list
-//     let fileBlockIndex = List.findIndexBack isFile list
 
 // Probably slow
 let insertAt idx elem array =
@@ -89,12 +79,10 @@ let solve2 input =
         elif snd array.[fileIdx] = Empty then
             loop (fileIdx - 1) array
         else
-            // let (fileSize, id) = dbg array.[fileIdx]
             let (fileSize, id) = array.[fileIdx]
 
             let spaceIdx =
                 Array.tryFindIndex (fun (size, id) -> id = Empty && size >= fileSize) array
-                // |> dbg
 
             match spaceIdx with
             | None -> loop (fileIdx - 1) array
@@ -108,28 +96,16 @@ let solve2 input =
                     |> Array.updateAt fileIdx (fileSize, Empty)
                     |> insertAt spaceIdx (fileSize, id)
 
-                // toString array |> dbg |> ignore
-
                 loop (fileIdx - 1) array
 
     let expand (length, id) = Array.replicate length id
 
-    // let firstSpaceIdx = Array.findIndex (snd >> ((=) Empty)) input
     let lastFileIdx = Array.findIndexBack (snd >> isFile) input
-    loop lastFileIdx input |> Array.collect expand |> checkSum'
-// let rec loop spaceId spaceSize array =
-//     let popped = Array.truncate (Array.length array - 1) array
-
-//     match Array.last array with
-//     | (_, Empty) -> loop spaceId spaceSize popped
-//     | (size, Id(id)) ->
-//         if size <= spaceSize then
-//             let nextSpaceId = Array.skip
-//             if size = spaceSize then
-//                 let array = Array.updateAt spaceId (size, Id id) popped
-//                 loop spaceId spaceSize array
+    loop lastFileIdx input |> Array.collect expand |> checkSum
 
 let test () =
+    let solution = (dayTestInputs 9).[0] |> parse1 |> solve1
+    printfn "%A" solution
     let solution = (dayTestInputs 9).[0] |> parse2 |> solve2
     printfn "%A" solution
 
