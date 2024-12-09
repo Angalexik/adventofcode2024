@@ -3,7 +3,6 @@ module Day9
 open AdventUtils
 open System
 open Utils.Text
-open ShellProgressBar
 
 type Id =
     | Empty
@@ -24,50 +23,32 @@ let checkSum seq =
         | (i, Id(id)) -> id * int64 i
         | (_, Empty) -> 0)
 
-let toString' a =
-    let idToStr id =
-        match id with
-        | Empty -> '.'
-        | Id(id) -> id.ToString().[0]
-
-    a |> Array.map idToStr |> (fun s -> new String(s))
+let expand (length, id) = Array.replicate length id
 
 let parse1 input =
-    // use pbar = new ProgressBar(19999, "Parsing")
-    let expand (length, id) = Array.replicate length id
-
     input
     |> chars
     |> Array.mapi (fun i e -> (charToInt e, idxToId i))
-    |> Array.collect (fun curr ->
-        // pbar.Tick()
-        expand curr)
+    |> Array.collect (fun curr -> expand curr)
 
 let parse2 input =
     input |> chars |> Array.mapi (fun i e -> (charToInt e, idxToId i))
 
 let solve1 input =
-    printfn "Solving!"
-    let empties = Seq.filter ((=) Empty) input |> Seq.length
-    // use pbar = new ProgressBar(empties, "Solving")
-
-    let rec loop fileIdx (list: Id array) =
-        if fileIdx < 0 then
-            list
-        elif list.[fileIdx] = Empty then
-            loop (fileIdx - 1) list
+    // Extremely hot loop
+    let rec loop fileIdx (array: Id array) =
+        if array.[fileIdx] = Empty then
+            loop (fileIdx - 1) array
         else
-            let emptyIdx = Seq.tryFindIndex ((=) Empty) list
+            let emptyIdx = Array.findIndex ((=) Empty) array
 
             match emptyIdx with
-            | None -> list
-            | Some(idx) when idx > fileIdx -> list
-            | Some(idx) ->
-                // pbar.Tick()
-                list.[idx] <- list.[fileIdx]
-                list.[fileIdx] <- Empty
+            | idx when idx > fileIdx -> array
+            | idx ->
+                array.[idx] <- array.[fileIdx]
+                array.[fileIdx] <- Empty
 
-                list |> loop (fileIdx - 1)
+                array |> loop (fileIdx - 1)
 
     input |> loop (input.Length - 1) |> checkSum
 
@@ -102,8 +83,6 @@ let solve2 input =
                     |> insertAt spaceIdx (fileSize, id)
 
                 loop (fileIdx - 1) array
-
-    let expand (length, id) = Array.replicate length id
 
     let lastFileIdx = Array.findIndexBack (snd >> isFile) input
     loop lastFileIdx input |> Array.collect expand |> checkSum
