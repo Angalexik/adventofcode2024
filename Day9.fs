@@ -33,14 +33,14 @@ let toString' a =
     a |> Array.map idToStr |> (fun s -> new String(s))
 
 let parse1 input =
-    use pbar = new ProgressBar(19999, "Parsing")
+    // use pbar = new ProgressBar(19999, "Parsing")
     let expand (length, id) = Array.replicate length id
 
     input
     |> chars
     |> Array.mapi (fun i e -> (charToInt e, idxToId i))
     |> Array.collect (fun curr ->
-        pbar.Tick()
+        // pbar.Tick()
         expand curr)
 
 let parse2 input =
@@ -49,7 +49,7 @@ let parse2 input =
 let solve1 input =
     printfn "Solving!"
     let empties = Seq.filter ((=) Empty) input |> Seq.length
-    use pbar = new ProgressBar(empties, "Solving")
+    // use pbar = new ProgressBar(empties, "Solving")
 
     let rec loop fileIdx (list: Id array) =
         if fileIdx < 0 then
@@ -63,9 +63,9 @@ let solve1 input =
             | None -> list
             | Some(idx) when idx > fileIdx -> list
             | Some(idx) ->
-                pbar.Tick()
-                let list =
-                    list |> Array.updateAt idx list.[fileIdx] |> Array.updateAt fileIdx Empty
+                // pbar.Tick()
+                list.[idx] <- list.[fileIdx]
+                list.[fileIdx] <- Empty
 
                 list |> loop (fileIdx - 1)
 
