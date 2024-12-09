@@ -56,15 +56,16 @@ let solve1 input =
 
     // Maybe slow because I'm also moving empty spaces at the end
     let rec loop list =
-        if not <| List.exists ((=) Empty) list then
-            list
-        else
+        let emptyIdx = List.tryFindIndex ((=) Empty) list
+
+        match emptyIdx with
+        | None -> list
+        | Some(idx) ->
             pbar.Tick()
-            let emptyIdx = List.findIndex ((=) Empty) list
-            let list = List.updateAt emptyIdx (List.last list) list
+            let list = List.updateAt idx (List.last list) list
             List.truncate (List.length list - 1) list |> loop
 
-    loop input |> checkSum
+    input |> loop |> checkSum
 
 // Probably slow
 let insertAt idx elem array =
