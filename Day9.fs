@@ -24,48 +24,52 @@ let checkSum seq =
         | (i, Id(id)) -> id * int64 i
         | (_, Empty) -> 0)
 
-let toString (array: (int * Id) array) =
+let toString' a =
     let idToStr id =
         match id with
         | Empty -> '.'
         | Id(id) -> id.ToString().[0]
 
-    let expand (length, id) = Array.replicate length (idToStr id)
-    array |> Array.collect expand |> (fun s -> new String(s))
+    a |> Array.map idToStr |> (fun s -> new String(s))
 
 let parse1 input =
     use pbar = new ProgressBar(19999, "Parsing")
-    let expand (length, id) = List.replicate length id
+    let expand (length, id) = Array.replicate length id
 
     input
     |> chars
     |> Array.mapi (fun i e -> (charToInt e, idxToId i))
-    |> Array.fold
-        (fun acc curr ->
-            pbar.Tick()
-            acc @ (expand curr))
-        []
+    |> Array.collect (fun curr ->
+        pbar.Tick()
+        expand curr)
 
 let parse2 input =
     input |> chars |> Array.mapi (fun i e -> (charToInt e, idxToId i))
 
 let solve1 input =
     printfn "Solving!"
-    let empties = List.filter ((=) Empty) input |> List.length
+    let empties = Seq.filter ((=) Empty) input |> Seq.length
     use pbar = new ProgressBar(empties, "Solving")
 
-    // Maybe slow because I'm also moving empty spaces at the end
-    let rec loop list =
-        let emptyIdx = List.tryFindIndex ((=) Empty) list
+    let rec loop fileIdx (list: Id array) =
+        if fileIdx < 0 then
+            list
+        elif list.[fileIdx] = Empty then
+            loop (fileIdx - 1) list
+        else
+            let emptyIdx = Seq.tryFindIndex ((=) Empty) list
 
-        match emptyIdx with
-        | None -> list
-        | Some(idx) ->
-            pbar.Tick()
-            let list = List.updateAt idx (List.last list) list
-            List.truncate (List.length list - 1) list |> loop
+            match emptyIdx with
+            | None -> list
+            | Some(idx) when idx > fileIdx -> list
+            | Some(idx) ->
+                pbar.Tick()
+                let list =
+                    list |> Array.updateAt idx list.[fileIdx] |> Array.updateAt fileIdx Empty
 
-    input |> loop |> checkSum
+                list |> loop (fileIdx - 1)
+
+    input |> loop (input.Length - 1) |> checkSum
 
 // Probably slow
 let insertAt idx elem array =
