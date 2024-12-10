@@ -19,3 +19,18 @@ module Text =
     let chars (text: string) = text.ToCharArray()
 
     let charToInt (c: char) = int c - int '0'
+
+module Array =
+    let flat2Darray array2D =
+        seq {
+            for x in [ 0 .. (Array2D.length1 array2D) - 1 ] do
+                for y in [ 0 .. (Array2D.length2 array2D) - 1 ] do
+                    yield array2D.[x, y]
+        }
+
+module Func =
+    let tryF f x =
+        try
+            Some (f x)
+        with
+            | _ -> None

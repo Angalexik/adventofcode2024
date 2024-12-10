@@ -34,3 +34,7 @@ let dayTestInputs day : string array =
             None)
     |> Array.sortBy (fun (_, idx) -> idx)
     |> Array.map (fun (content, _) -> content)
+
+let charGrid (lines: string) : char array2d =
+    let rows = lines |> _.Split("\n") |> Array.map _.ToCharArray()
+    Array2D.init rows.Length rows.[0].Length (fun y x -> rows.[y].[x])
