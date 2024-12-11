@@ -5,6 +5,8 @@ open System
 open Utils.Text
 open Utils.Func
 open Utils.Array
+open QuikGraph
+open QuikGraph.Algorithms
 
 let (++) (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
 
@@ -44,9 +46,10 @@ let solve1 input =
         | None -> 0
         | Some(x) -> x)
 
-// Part2 time so far: 2:35:34
+type Node = (int * int) * int
+
 let solve2 input =
-    let neighbours graph (element: (int * int) * int) =
+    let neighbours graph (element: Node) =
         let offsets = [ (1, 0); (-1, 0); (0, 1); (0, -1) ]
         let tryGet (y, x) a = (Array2D.get a y |> tryF) x
 
@@ -56,15 +59,17 @@ let solve2 input =
             tryGet idx graph)
         |> List.filter (fun (_, height) -> height = snd element + 1)
 
-    let rec dfs graph visited toVisit =
+    let rec dfs grid (edges: Edge<Node> list) visited toVisit =
         match toVisit with
-        | [] -> visited |> List.filter (snd >> (=) 9)
+        | [] ->
+            visited |> List.filter (snd >> (=) 9), new ArrayAdjacencyGraph<Node, Edge<Node>>(edges.ToAdjacencyGraph())
         | (x :: xs) ->
             if List.contains x visited then
-                dfs graph visited xs
+                dfs grid edges visited xs
             else
-                let neighbouring = neighbours graph x
-                dfs graph (x :: visited) (neighbouring @ xs)
+                let neighbouring = neighbours grid x
+                let newEdges = List.map (fun n -> new Edge<Node>(x, n)) neighbouring
+                dfs grid (edges @ newEdges) (x :: visited) (neighbouring @ xs)
 
     let rec bfs graph visited toVisit =
         match toVisit with
@@ -76,33 +81,42 @@ let solve2 input =
                 let neighbouring = neighbours graph x
                 bfs graph (x :: visited) (xs @ neighbouring)
 
-    let paths graph start dest =
-        let sorted = bfs graph [] [ start ] |> dbg
-        let mutable results = Map.ofList [ (dest, 1) ]
+    let paths (graph: ArrayAdjacencyGraph<Node, Edge<Node>>) (start: Node) (dest: Node) =
+        let sorted = graph.TopologicalSort()
+
+        let mutable results =
+            graph.Vertices |> Seq.map (fun v -> (v, 0)) |> Map.ofSeq |> Map.add dest 1
 
         sorted
-        |> List.iter (fun vert ->
-            neighbours graph vert
-            |> List.iter (fun neighbour ->
+        |> Seq.rev
+        |> Seq.iter (fun vert ->
+            graph.OutEdges(vert)
+            |> Seq.iter (fun edge ->
+                let neighbour = edge.Target
+
                 results <-
                     Map.change
                         vert
                         (function
-                        | None -> Some(results.[neighbour])
+                        | None -> failwith "Unreachable!"
                         | Some(x) -> Some(x + results.[neighbour]))
                         results))
 
         results.[start]
 
     input
-    |> Array2D.map (fun e -> if snd e = 0 then (e, dfs input [] [ e ]) |> Some else None)
+    |> Array2D.map (fun e ->
+        if snd e = 0 then
+            (e, dfs input [] [] [ e ]) |> Some
+        else
+            None)
     |> flat2Darray
     |> Seq.sumBy (function
         | None -> 0
-        | Some((start, nines)) -> nines |> List.sumBy (fun dest -> paths input start dest))
+        | Some((start, (nines, graph))) -> nines |> List.sumBy (fun dest -> paths graph start dest))
 
 let test () =
-    let solution = (dayTestInputs 10).[0] |> parse1 |> solve1
+    let solution = (dayTestInputs 10).[0] |> parse1 |> solve2
     printfn $"{solution}"
 
 let part1 () =
