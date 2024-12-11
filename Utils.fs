@@ -31,6 +31,9 @@ module Array =
 module Func =
     let tryF f x =
         try
-            Some (f x)
-        with
-            | _ -> None
+            Some(f x)
+        with _ ->
+            None
+
+    let repeat n f =
+        List.replicate n f |> List.reduce (>>)
