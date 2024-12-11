@@ -71,16 +71,6 @@ let solve2 input =
                 let newEdges = List.map (fun n -> new Edge<Node>(x, n)) neighbouring
                 dfs grid (edges @ newEdges) (x :: visited) (neighbouring @ xs)
 
-    let rec bfs graph visited toVisit =
-        match toVisit with
-        | [] -> visited
-        | (x :: xs) ->
-            if List.contains x visited then
-                bfs graph visited xs
-            else
-                let neighbouring = neighbours graph x
-                bfs graph (x :: visited) (xs @ neighbouring)
-
     let paths (graph: ArrayAdjacencyGraph<Node, Edge<Node>>) (start: Node) (dest: Node) =
         let sorted = graph.TopologicalSort()
 
