@@ -41,10 +41,29 @@ module Bag =
 
     let remove value (bag: 'a Bag) : 'a Bag = removeMany value 1UL bag
 
+    let fromSeq (seq: 'a seq) : 'a Bag =
+        Seq.fold (fun acc curr -> add curr acc) empty seq
+
+    let fromOccurenceSeq (seq: ('a * uint64) seq) : 'a Bag =
+        Seq.fold (fun acc (currValue, currCount) -> addMany currValue currCount acc) empty seq
+
+    let toOccurenceSeq (bag: 'a Bag) = Map.toSeq bag
+
     let count (bag: 'a Bag) = Map.values bag |> Seq.sum
 
-    let fromSeq (seq: 'a seq) =
-        Seq.fold (fun acc curr -> add curr acc) empty seq
+    let union (bag1: 'a Bag) (bag2: 'a Bag) : 'a Bag =
+        toOccurenceSeq bag1
+        |> Seq.fold (fun acc (value, count) -> addMany value count acc) bag2
+
+    let collect (mapping: 'a -> 'b Bag) (bag: 'a Bag) : 'b Bag =
+        let timesF =
+            function
+            | (value, 1UL) -> mapping value
+            | (value, many) -> mapping value |> Map.map (fun _ c -> c * many)
+
+        toOccurenceSeq bag |> Seq.collect (timesF >> toOccurenceSeq) |> fromOccurenceSeq
+
+    let singleton value = Map.empty |> add value
 
 let applyRules (stones: int64 Bag) =
     let splitNum number =
@@ -52,20 +71,14 @@ let applyRules (stones: int64 Bag) =
         let length = str.Length / 2
         let firstHalf = str.Substring(0, length) |> int64
         let secondHalf = str.Substring(length) |> int64
-        (firstHalf, secondHalf)
+        (Bag.singleton firstHalf, Bag.singleton secondHalf) ||> Bag.union
 
     stones
-    |> Map.toSeq
-    |> Seq.fold
-        (fun acc (stone, count) ->
-            acc
-            |> match stone with
-               | 0L -> Bag.addMany 1L count
-               | even when (stone.ToString().Length % 2 = 0) ->
-                   let (firstStone, secondStone) = splitNum even
-                   Bag.addMany firstStone count >> Bag.addMany secondStone count
-               | n -> Bag.addMany (n * 2024L) count)
-        Bag.empty
+    |> Bag.collect (fun stone ->
+        match stone with
+        | 0L -> Bag.singleton 1L
+        | even when (stone.ToString().Length % 2 = 0) -> splitNum even
+        | n -> Bag.singleton (n * 2024L))
 
 let parse1 input =
     split " " input |> Array.map int64 |> Bag.fromSeq
