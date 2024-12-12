@@ -88,9 +88,9 @@ let solve2 input =
     loop lastFileIdx input |> Array.collect expand |> checkSum
 
 let test () =
-    let solution = (dayTestInputs 9).[0] |> parse1 |> solve1
+    let solution = (dayTestInputs 9).[1] |> parse1 |> solve1
     printfn "%A" solution
-    let solution = (dayTestInputs 9).[0] |> parse2 |> solve2
+    let solution = (dayTestInputs 9).[1] |> parse2 |> solve2
     printfn "%A" solution
 
 let part1 () =
