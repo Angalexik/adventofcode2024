@@ -93,6 +93,12 @@ let solve1 (input: Machine array) =
         | n -> Some n)
     |> Array.sum
 
+// (aPresses * aValue) + (bPresses * bValue) = prize
+// aValue, bValue, and prize are known
+// Cost = aPresses * 3 + bPresses
+// This is apparently called a Diophantine equation
+// https://math.stackexchange.com/questions/20717/how-to-find-solutions-of-linear-diophantine-ax-by-c?rq=1
+// https://math.stackexchange.com/questions/488628/integer-solutions-for-linear-equation#488630
 let solve2 input = ()
 
 let test () =
