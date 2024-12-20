@@ -4,12 +4,29 @@ open AdventUtils
 open System
 open Utils
 open System.Text.RegularExpressions
+open System.Text
 
 type Robot =
     {
         Position: int * int
         Velocity: int * int
     }
+
+
+let showRobots' width height robots =
+    let a2d = Array2D.create height width '.'
+    let builder = new StringBuilder()
+    robots |> Seq.iter (fun { Position = (px, py) } -> Array2D.set a2d py px '#')
+
+    for y = 0 to height - 1 do
+        for x = 0 to width - 1 do
+            builder.Append a2d[y, x] |> ignore
+
+        builder.AppendLine() |> ignore
+
+    printfn $"\n\n\n{builder.ToString()}"
+    robots
+
 
 
 let showRobots width height robots =
@@ -87,7 +104,11 @@ let solve1 width height input =
     let q3 = robots |> Seq.filter (quadrant >> (=) 3) |> Seq.length |> dbg
     q0 * q1 * q2 * q3
 
-let solve2 input = ()
+let solve2 width height input =
+    let maxSteps = 10000
+    let step' = step width height >> showRobots' width height
+    (Func.repeat maxSteps step') input
+
 
 let test () =
     let solution = (dayTestInputs 14).[0] |> parse1 |> solve1 11 7
@@ -97,4 +118,4 @@ let part1 () =
     printfn $"Part 1: {dayInput 14 |> parse1 |> solve1 101 103}"
 
 let part2 () =
-    printfn $"Part 2: {dayInput 14 |> solve2}"
+    printfn $"Part 2: {dayInput 14 |> parse1 |> solve2 101 103}"
