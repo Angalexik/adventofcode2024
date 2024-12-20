@@ -62,7 +62,8 @@ let solve2 input =
     let rec dfs grid (edges: Edge<Node> list) visited toVisit =
         match toVisit with
         | [] ->
-            visited |> List.filter (snd >> (=) 9), new ArrayAdjacencyGraph<Node, Edge<Node>>(edges.ToAdjacencyGraph())
+            visited |> List.filter (snd >> (=) 9),
+            new ArrayAdjacencyGraph<Node, Edge<Node>>(edges.ToAdjacencyGraph())
         | (x :: xs) ->
             if List.contains x visited then
                 dfs grid edges visited xs
@@ -103,7 +104,8 @@ let solve2 input =
     |> flat2Darray
     |> Seq.sumBy (function
         | None -> 0
-        | Some((start, (nines, graph))) -> nines |> List.sumBy (fun dest -> paths graph start dest))
+        | Some((start, (nines, graph))) ->
+            nines |> List.sumBy (fun dest -> paths graph start dest))
 
 let test () =
     let solution = (dayTestInputs 10).[0] |> parse1 |> solve2

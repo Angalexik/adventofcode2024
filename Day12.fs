@@ -42,7 +42,9 @@ let allRegions grid =
             if List.contains curr visited then
                 (visited, price)
             else
-                let (currVisited, currArea, currPerimiter) = regionPriceAndElements grid curr
+                let (currVisited, currArea, currPerimiter) =
+                    regionPriceAndElements grid curr
+
                 let currPrice = currArea * currPerimiter
                 (visited @ currVisited, price + currPrice))
         ([], 0)
@@ -64,7 +66,9 @@ let regionSides (region: bool array2d) =
             let cells =
                 diag1 @ diag2
                 // |> dbg
-                |> List.choose (fun pos -> tryGet region pos |> Option.bind (fun e -> if e then Some pos else None))
+                |> List.choose (fun pos ->
+                    tryGet region pos
+                    |> Option.bind (fun e -> if e then Some pos else None))
             // |> dbg
 
             if cells.Length % 2 = 1 then
@@ -82,7 +86,9 @@ let solve1 input =
             if List.contains curr visited then
                 (visited, price)
             else
-                let (currVisited, currArea, currPerimiter) = regionPriceAndElements input curr
+                let (currVisited, currArea, currPerimiter) =
+                    regionPriceAndElements input curr
+
                 let currPrice = currArea * currPerimiter
                 (visited @ currVisited, price + currPrice))
         ([], 0)
@@ -90,7 +96,8 @@ let solve1 input =
 
 let solve2 input =
     let positionsToArray2d positions =
-        Array2D.init (Array2D.length1 input) (Array2D.length2 input) (fun y x -> List.contains (y, x) positions)
+        Array2D.init (Array2D.length1 input) (Array2D.length2 input) (fun y x ->
+            List.contains (y, x) positions)
 
     let regions =
         Array2D.mapi (fun y x _ -> (y, x)) input
@@ -103,8 +110,9 @@ let solve2 input =
                     let (region, _, _) = regionPriceAndElements input curr
                     region :: regions)
             []
-        |> List.sumBy (fun positions -> positions |> positionsToArray2d |> regionSides |> (*) positions.Length)
-        // |> List.map (positionsToArray2d >> regionSides)
+        |> List.sumBy (fun positions ->
+            positions |> positionsToArray2d |> regionSides |> (*) positions.Length)
+    // |> List.map (positionsToArray2d >> regionSides)
 
     regions
 

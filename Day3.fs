@@ -13,7 +13,8 @@ type Instrution =
 
 let parse1 input =
     Regex.Matches(input, @"mul\((?<num1>\d{1,3}),(?<num2>\d{1,3})\)")
-    |> Seq.map (fun matsch -> (matsch.Groups.[1].Value |> int, matsch.Groups[2].Value |> int))
+    |> Seq.map (fun matsch ->
+        (matsch.Groups.[1].Value |> int, matsch.Groups[2].Value |> int))
 
 let parse2 input =
     let toInstrution (matsch: Match) =
@@ -22,8 +23,10 @@ let parse2 input =
         | "don't()" -> Dont
         | _ ->
             Mul(
-                { Num1 = matsch.Groups.[1].Value |> int
-                  Num2 = matsch.Groups.[2].Value |> int }
+                {
+                    Num1 = matsch.Groups.[1].Value |> int
+                    Num2 = matsch.Groups.[2].Value |> int
+                }
             )
 
     Regex.Matches(input, @"mul\((?<num1>\d{1,3}),(?<num2>\d{1,3})\)|do\(\)|don't\(\)")
@@ -37,7 +40,8 @@ let solve2 instructions =
         match curr with
         | Do -> (true, total)
         | Dont -> (false, total)
-        | Mul({ Num1 = n1; Num2 = n2 }) -> (enabled, if enabled then total + (n1 * n2) else total)
+        | Mul({ Num1 = n1; Num2 = n2 }) ->
+            (enabled, if enabled then total + (n1 * n2) else total)
 
     instructions |> Seq.fold folder (true, 0) |> snd
 

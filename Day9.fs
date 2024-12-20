@@ -68,7 +68,9 @@ let solve2 input =
             let (fileSize, id) = array.[fileIdx]
 
             let spaceIdx =
-                Array.tryFindIndex (fun (size, id) -> id = Empty && size >= fileSize) array
+                Array.tryFindIndex
+                    (fun (size, id) -> id = Empty && size >= fileSize)
+                    array
 
             match spaceIdx with
             | None -> loop (fileIdx - 1) array

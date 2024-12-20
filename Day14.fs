@@ -6,8 +6,10 @@ open Utils
 open System.Text.RegularExpressions
 
 type Robot =
-    { Position: int * int
-      Velocity: int * int }
+    {
+        Position: int * int
+        Velocity: int * int
+    }
 
 
 let showRobots width height robots =
@@ -46,8 +48,10 @@ let modLoop value divisor =
 
 let step width height robots =
     let move
-        { Position = (px, py)
-          Velocity = (vx, vy) }
+        {
+            Position = (px, py)
+            Velocity = (vx, vy)
+        }
         =
         let px = px + vx
         let py = py + vy
@@ -67,8 +71,10 @@ let parse1 input =
         >> Seq.map (_.Value >> int)
         >> Seq.toList
         >> (fun [ px; py; vx; vy ] ->
-            { Position = (px, py)
-              Velocity = (vx, vy) })
+            {
+                Position = (px, py)
+                Velocity = (vx, vy)
+            })
     )
 
 let solve1 width height input =

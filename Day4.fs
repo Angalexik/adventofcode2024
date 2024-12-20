@@ -50,19 +50,23 @@ let parse2 (rows: char array array) =
 let solve1 input =
     let horizontalMatches (rows: char array array) =
         rows
-        |> Array.map ((fun (r: char array) -> new String(r)) >> (fun r -> Regex.Count(r, "XMAS")))
+        |> Array.map (
+            (fun (r: char array) -> new String(r)) >> (fun r -> Regex.Count(r, "XMAS"))
+        )
         |> Array.sum
 
     let revRows = Array.map Array.rev
 
-    [ input |> horizontalMatches
-      input |> revRows |> horizontalMatches
-      input |> transpose' |> horizontalMatches
-      input |> transpose' |> revRows |> horizontalMatches
-      input |> diags |> horizontalMatches
-      input |> diags |> revRows |> horizontalMatches
-      input |> revRows |> diags |> horizontalMatches
-      input |> revRows |> diags |> revRows |> horizontalMatches ]
+    [
+        input |> horizontalMatches
+        input |> revRows |> horizontalMatches
+        input |> transpose' |> horizontalMatches
+        input |> transpose' |> revRows |> horizontalMatches
+        input |> diags |> horizontalMatches
+        input |> diags |> revRows |> horizontalMatches
+        input |> revRows |> diags |> horizontalMatches
+        input |> revRows |> diags |> revRows |> horizontalMatches
+    ]
     |> List.sum
 
 let solve2 (input: char array2d) =

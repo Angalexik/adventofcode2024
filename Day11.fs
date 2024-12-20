@@ -45,7 +45,10 @@ module Bag =
         Seq.fold (fun acc curr -> add curr acc) empty seq
 
     let fromOccurenceSeq (seq: ('a * uint64) seq) : 'a Bag =
-        Seq.fold (fun acc (currValue, currCount) -> addMany currValue currCount acc) empty seq
+        Seq.fold
+            (fun acc (currValue, currCount) -> addMany currValue currCount acc)
+            empty
+            seq
 
     let toOccurenceSeq (bag: 'a Bag) = Map.toSeq bag
 

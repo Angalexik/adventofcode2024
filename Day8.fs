@@ -28,7 +28,10 @@ let parse1 input =
         (fun y x e ->
             if Char.IsLetterOrDigit(e) then
                 frequencies <-
-                    Map.change e (fun coords -> (x, y) :: (Option.defaultValue [] coords) |> Some) frequencies)
+                    Map.change
+                        e
+                        (fun coords -> (x, y) :: (Option.defaultValue [] coords) |> Some)
+                        frequencies)
         grid
 
     // Everything in x, y format
@@ -54,6 +57,7 @@ let solve2 (frequencies, bounds) =
                 loop (pos :: nodes) (pos ++ dir) dir
             else
                 nodes
+
         let loop = loop []
         a1 :: a2 :: (loop a1 (a1 -- a2)) @ (loop a1 (a2 -- a1))
 

@@ -35,5 +35,4 @@ module Func =
         with _ ->
             None
 
-    let repeat n f =
-        List.replicate n f |> List.reduce (>>)
+    let repeat n f = List.replicate n f |> List.reduce (>>)

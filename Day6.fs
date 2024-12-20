@@ -1,4 +1,5 @@
 module Day6
+
 #nowarn "57"
 
 open AdventUtils

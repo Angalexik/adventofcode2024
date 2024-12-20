@@ -21,14 +21,18 @@ let price =
     | B -> 1
 
 type Machine =
-    { A: int * int
-      B: int * int
-      Target: int * int }
+    {
+        A: int * int
+        B: int * int
+        Target: int * int
+    }
 
 let machine [ ax; ay; bx; by; tx; ty ] =
-    { A = (ax, ay)
-      B = (bx, by)
-      Target = (tx, ty) }
+    {
+        A = (ax, ay)
+        B = (bx, by)
+        Target = (tx, ty)
+    }
 
 let consequence (machine: Machine) button =
     match button with
@@ -72,7 +76,8 @@ let pointPrice machine point =
 
 let parse1 input =
     let regex =
-        Regex @"Button A: X\+(\d+), Y\+(\d+)\nButton B: X\+(\d+), Y\+(\d+)\nPrize: X=(\d+), Y=(\d+)"
+        Regex
+            @"Button A: X\+(\d+), Y\+(\d+)\nButton B: X\+(\d+), Y\+(\d+)\nPrize: X=(\d+), Y=(\d+)"
 
     input
     |> split "\n\n"
