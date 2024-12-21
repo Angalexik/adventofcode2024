@@ -13,6 +13,8 @@ module Text =
         else
             (text.Substring(0, pos), text.Substring(pos + separator.Length))
 
+    let lines text = split "\n" text
+
     let indexesOf (subString: string) (text: string) =
         Regex.Matches(text, Regex.Escape(subString)) |> Seq.map _.Index
 
