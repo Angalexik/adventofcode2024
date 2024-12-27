@@ -5,12 +5,25 @@ open System
 open Utils
 open System.Text.RegularExpressions
 open System.Text
+open SixLabors.ImageSharp
+open SixLabors.ImageSharp.Processing
+open SixLabors.ImageSharp.PixelFormats
 
 type Robot =
     {
         Position: int * int
         Velocity: int * int
     }
+
+
+
+let imageRobots width height iter robots =
+    let white = new L8(255uy)
+    use image = new Image<L8>(width, height)
+
+    robots |> Seq.iter (fun { Position = (px, py) } -> image.[px, py] <- white)
+    image.Save($"./images/{iter.ToString()}.png")
+    robots
 
 
 let showRobots' width height robots =
@@ -106,7 +119,13 @@ let solve1 width height input =
 
 let solve2 width height input =
     let maxSteps = 10000
-    let step' = step width height >> showRobots' width height
+    let mutable iter = 1
+
+    let step' robots =
+        let newRobots = step width height robots |> imageRobots width height iter
+        iter <- iter + 1
+        newRobots
+    // let step' = step width height >> imageRobots width height iter
     (Func.repeat maxSteps step') input
 
 

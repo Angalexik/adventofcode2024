@@ -38,3 +38,5 @@ msbuild.wrn
 
 # Advent of Code inputs
 inputs/real/*.txt
+
+images/*
