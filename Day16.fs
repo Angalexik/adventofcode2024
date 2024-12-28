@@ -124,61 +124,17 @@ let convert (tryFunc: TryFunc<_, _>) arg =
     let success = tryFunc.Invoke(arg, &out)
     if success then Some out else None
 
-let shortestPath (graph: IVertexAndEdgeListGraph<_, _>) startPos endPos =
-    let weights (edge: IEdge<_>) =
-        if fst edge.Source <> fst edge.Target then 1000.0 else 1.0
+let weights (edge: IEdge<_>) =
+    if fst edge.Source <> fst edge.Target then 1000.0 else 1.0
 
+let shortestPaths (graph: IVertexAndEdgeListGraph<_, _>) startPos endPos =
     let cost vert =
         snd vert -- endPos ||> (fun y x -> y * y + x * x |> float |> Math.Sqrt)
 
     let shortest = graph.ShortestPathsAStar(weights, cost, (East, startPos)) |> convert
-    // let shortest: (Dir * (int * int)) -> seq<_> option = graph.ShortestPathsAStar (weights, cost, (East, startPos)) |> convert
-
-    let pathLength path = path |> Seq.sumBy weights
 
     [ North; East; South; West ]
-    |> Seq.choose ((fun dir -> (dir, endPos)) >> shortest >> Option.map pathLength)
-    |> Seq.min
-
-// This ain't it chief
-let dijkstra (grid: GridElement array2d) startPos =
-    let mutable distances = Map.ofList [ ((East, startPos), 0) ]
-
-    grid
-    |> Array2D.iteri (fun y x e ->
-        match e with
-        | Space Start
-        | Wall -> ()
-        | _ ->
-            [ South; North; West; East ]
-            |> List.iter (fun d ->
-                distances <- Map.add (d, (y, x)) Int32.MaxValue distances))
-
-    let rec loop queue (dists: Map<_, _>) =
-        match queue with
-        | [] -> dists
-        | _ ->
-            let (dir, pos) = queue |> Seq.minBy (fun u -> dists.[u])
-            let queue = List.filter (fun x -> x <> (dir, pos)) queue
-
-            let neighbouring =
-                neighbours grid pos dir
-                |> Seq.filter (fun (_, d, p) -> List.contains (d, p) queue)
-
-            let dists =
-                neighbouring
-                |> Seq.fold
-                    (fun (acc: Map<_, _>) (cost, d, p) ->
-                        let alt = acc.[(dir, pos)] + cost
-                        if alt < acc.[(d, p)] then Map.add (d, p) alt acc else acc)
-                    dists
-
-            loop queue dists
-
-    distances
-    |> loop (Map.keys distances |> Seq.toList)
-    |> Map.pick (fun (_, (posX, posY)) d ->
-        if grid.[posX, posY] = Space End then Some d else None)
+    |> Seq.choose ((fun dir -> (dir, endPos)) >> shortest)
 
 let parse1 input =
     charGrid input |> Array2D.map gridElement
@@ -196,18 +152,32 @@ let solve1 input =
         prepared
         |> Seq.find (snd >> (=) (Space End))
         |> fst
+    let pathLength path = path |> Seq.sumBy weights
 
-    shortestPath (createGraph input) startPos endPos
-    // dijkstra input startPos
+    shortestPaths (createGraph input) startPos endPos |> Seq.map pathLength |> Seq.min
 
-let solve2 input = ()
+let solve2 input =
+    let prepared =
+        input
+        |> Array2D.mapi (fun y x e -> ((y, x), e))
+        |> flat2Darray
+    let startPos =
+        prepared
+        |> Seq.find (snd >> (=) (Space Start))
+        |> fst
+    let endPos =
+        prepared
+        |> Seq.find (snd >> (=) (Space End))
+        |> fst
+    let spots = shortestPaths (createGraph input) startPos endPos |> Seq.concat |> Seq.collect (fun e -> [snd e.Source; snd e.Target]) |> Set.ofSeq
+    ()
 
 let test () =
-    let solution = (dayTestInputs 16).[0] |> parse1 |> solve1
+    let solution = (dayTestInputs 16).[0] |> parse1 |> solve2
     printfn $"{solution}"
 
 let part1 () =
     printfn $"Part 1: {dayInput 16 |> parse1 |> solve1}"
 
 let part2 () =
-    printfn $"Part 2: {dayInput 16 |> solve2}"
+    printfn $"Part 2: {dayInput 16 |> parse1 |> solve2}"
