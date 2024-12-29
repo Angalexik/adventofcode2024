@@ -2,6 +2,7 @@ module Day16
 
 open AdventUtils
 open System
+open Utils
 open Utils.Func
 open Utils.Array
 open QuikGraph
@@ -90,6 +91,82 @@ let neighbours (graph: GridElement array2d) pos currentDir =
 //         pos -- endPos ||> (fun y x -> Math.Sqrt (y*y + x*x))
 //     ()
 
+let possibleMoves (grid: _ array2d) (spot: Dir * (int * int)) =
+    let dir, pos = spot
+    let newPos = moveTo pos dir
+
+    let forward =
+        if grid[fst pos, snd pos] <> Wall then
+            [ (dir, newPos) ]
+        else
+            []
+
+    let rotations = [ (rotateClockwise dir, pos); (rotateCounterClockwise dir, pos) ]
+    forward @ rotations
+
+let heuristic goalPos pos =
+    let abs =
+        function
+        | n when n < 0 -> -n
+        | n -> n
+
+    pos -- goalPos ||> (fun y x -> abs y + abs x)
+
+let weight start finish =
+    if fst start <> fst finish then 1000u
+    elif (snd finish, snd start) ||> heuristic = 1 then 1u
+    else failwith "You probably messed this one up"
+
+let astar (grid: _ array2d) startPos endPos =
+    let h = heuristic endPos >> uint32
+    let possible = possibleMoves grid
+    let start = (East, startPos)
+    let openSet = BinomialHeapPQ.empty |> BinomialHeapPQ.insert (h startPos) start
+    let gScores = Map.ofList [ (start, 0u) ]
+
+    let rec loop openSet visited gScores shortestLength =
+        let current = BinomialHeapPQ.getMin openSet |> Option.get // RIPBOZO
+        let curSpot = current.v
+        let atEnd = snd curSpot = endPos
+
+        match shortestLength with
+        // shortestLength exists and current path to end is longer
+        // | Some c when current.k > c && atEnd -> (visited, current.k)
+        | Some c -> (visited, c)
+        | _ ->
+            let openSet = BinomialHeapPQ.deleteMin openSet
+            // let visited = if not atEnd then Set.add curSpot visited else visited
+            let visited = Set.add curSpot visited
+            let neighbours = possible curSpot
+
+            let neigbourCosts =
+                neighbours
+                |> Seq.filter ((flip Set.contains visited) >> not)
+                // |> Seq.filter (fun n -> 
+                //     if snd n = endPos then 
+                //         match shortestLength with
+                //         | None -> true
+                //         | Some s -> 
+                //     else true)
+                |> Seq.map (fun n -> n, Map.find curSpot gScores + weight curSpot n)
+                |> Seq.filter (fun (n, c) ->
+                    Map.tryFind n gScores |> Option.defaultValue UInt32.MaxValue |> (<) c)
+
+            let (newGScores, newOpenSet) =
+                neigbourCosts
+                |> Seq.fold
+                    (fun (gScores, openSet) (n, c) ->
+                        let newGScores = Map.add n c gScores
+                        let score = c + h (snd n)
+                        let newOpenSet = BinomialHeapPQ.insert score n openSet
+                        (newGScores, newOpenSet))
+                    (gScores, openSet)
+            let newShortestLength = if atEnd then shortestLength |> Option.orElse (Some current.k) else shortestLength
+
+            loop newOpenSet visited newGScores newShortestLength
+
+    loop openSet Set.empty gScores None
+
 let createGraph (grid: GridElement array2d) =
     let mutable edges = []
 
@@ -140,40 +217,27 @@ let parse1 input =
     charGrid input |> Array2D.map gridElement
 
 let solve1 input =
-    let prepared =
-        input
-        |> Array2D.mapi (fun y x e -> ((y, x), e))
-        |> flat2Darray
-    let startPos =
-        prepared
-        |> Seq.find (snd >> (=) (Space Start))
-        |> fst
-    let endPos =
-        prepared
-        |> Seq.find (snd >> (=) (Space End))
-        |> fst
-    let pathLength path = path |> Seq.sumBy weights
+    let prepared = input |> Array2D.mapi (fun y x e -> ((y, x), e)) |> flat2Darray
+    let startPos = prepared |> Seq.find (snd >> (=) (Space Start)) |> fst
+    let endPos = prepared |> Seq.find (snd >> (=) (Space End)) |> fst
 
-    shortestPaths (createGraph input) startPos endPos |> Seq.map pathLength |> Seq.min
+    astar input startPos endPos |> snd
 
 let solve2 input =
-    let prepared =
-        input
-        |> Array2D.mapi (fun y x e -> ((y, x), e))
-        |> flat2Darray
-    let startPos =
-        prepared
-        |> Seq.find (snd >> (=) (Space Start))
-        |> fst
-    let endPos =
-        prepared
-        |> Seq.find (snd >> (=) (Space End))
-        |> fst
-    let spots = shortestPaths (createGraph input) startPos endPos |> Seq.concat |> Seq.collect (fun e -> [snd e.Source; snd e.Target]) |> Set.ofSeq
+    let prepared = input |> Array2D.mapi (fun y x e -> ((y, x), e)) |> flat2Darray
+    let startPos = prepared |> Seq.find (snd >> (=) (Space Start)) |> fst
+    let endPos = prepared |> Seq.find (snd >> (=) (Space End)) |> fst
+
+    let spots =
+        shortestPaths (createGraph input) startPos endPos
+        |> Seq.concat
+        |> Seq.collect (fun e -> [ snd e.Source; snd e.Target ])
+        |> Set.ofSeq
+
     ()
 
 let test () =
-    let solution = (dayTestInputs 16).[0] |> parse1 |> solve2
+    let solution = (dayTestInputs 16).[0] |> parse1 |> solve1
     printfn $"{solution}"
 
 let part1 () =
