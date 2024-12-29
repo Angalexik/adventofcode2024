@@ -7,6 +7,7 @@ open Utils.Func
 open Utils.Array
 open QuikGraph
 open QuikGraph.Algorithms
+open System.Text
 
 type Dir =
     | East
@@ -91,6 +92,20 @@ let neighbours (graph: GridElement array2d) pos currentDir =
 //         pos -- endPos ||> (fun y x -> Math.Sqrt (y*y + x*x))
 //     ()
 
+let debugPrint (grid: _ array2d) positions =
+    let sb = new StringBuilder()
+
+    for y = 0 to Array2D.length1 grid - 1 do
+        for x = 0 to Array2D.length2 grid - 1 do
+            if Seq.contains (y, x) positions then
+                sb.Append "O" |> ignore
+            else
+                grid[y, x] |> _.ToString() |> sb.Append |> ignore
+
+        sb.AppendLine() |> ignore
+
+    printfn $"{sb.ToString()}\n\n\n"
+
 let possibleMoves (grid: _ array2d) (spot: Dir * (int * int)) =
     let dir, pos = spot
     let newPos = moveTo pos dir
@@ -124,77 +139,74 @@ let astar (grid: _ array2d) startPos endPos =
     let openSet = BinomialHeapPQ.empty |> BinomialHeapPQ.insert (h startPos) start
     let gScores = Map.ofList [ (start, 0u) ]
 
-    let rec loop openSet visited gScores shortestLength =
+    let unravel parents =
+        let rec loop visited queue =
+            match queue with
+            | [] -> visited
+            | (x :: xs) ->
+                if List.contains x visited then
+                    loop visited xs
+                else
+                    let children = Map.tryFind x parents |> Option.defaultValue []
+                    Seq.length children |> dbg |> ignore
+                    loop (x :: visited) (children @ xs)
+
+        loop [] ([ East; West; North; South ] |> List.map (fun d -> (d, endPos)))
+        |> Seq.map snd
+        |> Set.ofSeq
+
+    let rec loop openSet visited gScores shortestLength parents =
+        let getGScore n =
+            Map.tryFind n gScores |> Option.defaultValue UInt32.MaxValue
+
         let current = BinomialHeapPQ.getMin openSet |> Option.get // RIPBOZO
         let curSpot = current.v
         let atEnd = snd curSpot = endPos
 
         match shortestLength with
         // shortestLength exists and current path to end is longer
-        // | Some c when current.k > c && atEnd -> (visited, current.k)
-        | Some c -> (visited, c)
+        | Some c when current.k > c && atEnd -> (unravel parents, c)
         | _ ->
             let openSet = BinomialHeapPQ.deleteMin openSet
-            // let visited = if not atEnd then Set.add curSpot visited else visited
-            let visited = Set.add curSpot visited
+            let visited = if not atEnd then Set.add curSpot visited else visited
             let neighbours = possible curSpot
 
             let neigbourCosts =
                 neighbours
                 |> Seq.filter ((flip Set.contains visited) >> not)
-                // |> Seq.filter (fun n -> 
-                //     if snd n = endPos then 
-                //         match shortestLength with
-                //         | None -> true
-                //         | Some s -> 
-                //     else true)
-                |> Seq.map (fun n -> n, Map.find curSpot gScores + weight curSpot n)
-                |> Seq.filter (fun (n, c) ->
-                    Map.tryFind n gScores |> Option.defaultValue UInt32.MaxValue |> (<) c)
+                |> Seq.map (fun n -> n, getGScore curSpot + weight curSpot n)
+                |> Seq.filter (fun (n, c) -> c <= getGScore n)
 
-            let (newGScores, newOpenSet) =
+            let (newGScores, newOpenSet, newParents) =
                 neigbourCosts
                 |> Seq.fold
-                    (fun (gScores, openSet) (n, c) ->
-                        let newGScores = Map.add n c gScores
+                    (fun (gScores, openSet, parents) (n, c) ->
                         let score = c + h (snd n)
                         let newOpenSet = BinomialHeapPQ.insert score n openSet
-                        (newGScores, newOpenSet))
-                    (gScores, openSet)
-            let newShortestLength = if atEnd then shortestLength |> Option.orElse (Some current.k) else shortestLength
+                        let oldGScore = getGScore n
 
-            loop newOpenSet visited newGScores newShortestLength
+                        let newParents =
+                            if oldGScore = c then
+                                Map.change
+                                    n
+                                    (Option.map (fun ps -> curSpot :: ps))
+                                    parents
+                            else
+                                Map.add n [ curSpot ] parents
 
-    loop openSet Set.empty gScores None
+                        let newGScores = Map.add n c gScores
+                        (newGScores, newOpenSet, newParents))
+                    (gScores, openSet, parents)
 
-let createGraph (grid: GridElement array2d) =
-    let mutable edges = []
+            let newShortestLength =
+                if atEnd then
+                    shortestLength |> Option.orElse (Some current.k)
+                else
+                    shortestLength
 
-    grid
-    |> Array2D.iteri (fun y x e ->
-        if e <> Wall then
-            let pos = (y, x)
+            loop newOpenSet visited newGScores newShortestLength newParents
 
-            let newEdges =
-                [ North; East; South; West ]
-                |> List.collect (fun dir ->
-                    let newPos = moveTo pos dir
-
-                    let straight =
-                        if grid[fst newPos, snd newPos] <> Wall then
-                            [ new SEdge<_>((dir, pos), (dir, newPos)) ]
-                        else
-                            []
-
-                    straight
-                    @ [
-                        new SEdge<_>((dir, pos), (rotateClockwise dir, pos))
-                        new SEdge<_>((dir, pos), (rotateCounterClockwise dir, pos))
-                    ])
-
-            edges <- edges @ newEdges)
-
-    new ArrayAdjacencyGraph<_, _>(edges.ToAdjacencyGraph())
+    loop openSet Set.empty gScores None Map.empty
 
 let convert (tryFunc: TryFunc<_, _>) arg =
     let mutable out = null
@@ -228,16 +240,13 @@ let solve2 input =
     let startPos = prepared |> Seq.find (snd >> (=) (Space Start)) |> fst
     let endPos = prepared |> Seq.find (snd >> (=) (Space End)) |> fst
 
-    let spots =
-        shortestPaths (createGraph input) startPos endPos
-        |> Seq.concat
-        |> Seq.collect (fun e -> [ snd e.Source; snd e.Target ])
-        |> Set.ofSeq
-
-    ()
+    let (positions, cost) = astar input startPos endPos
+    debugPrint input Set.empty
+    debugPrint input positions
+    positions |> Set.count
 
 let test () =
-    let solution = (dayTestInputs 16).[0] |> parse1 |> solve1
+    let solution = (dayTestInputs 16).[0] |> parse1 |> solve2
     printfn $"{solution}"
 
 let part1 () =
