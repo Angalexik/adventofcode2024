@@ -120,20 +120,16 @@ let possibleMoves (grid: _ array2d) (spot: Dir * (int * int)) =
     forward @ rotations
 
 let heuristic goalPos pos =
-    let abs =
-        function
-        | n when n < 0 -> -n
-        | n -> n
-
-    pos -- goalPos ||> (fun y x -> abs y + abs x)
+    0u
+    // pos -- goalPos ||> (fun y x -> (y * y + x * x) |> float |> Math.Sqrt |> Math.Floor |> uint32)
 
 let weight start finish =
-    if fst start <> fst finish then 1000u
-    elif (snd finish, snd start) ||> heuristic = 1 then 1u
-    else failwith "You probably messed this one up"
+    if fst start <> fst finish then 1000u else 1u
+    // elif (snd finish, snd start) ||> heuristic = 1u then 1u
+    // else failwith "You probably messed this one up"
 
 let astar (grid: _ array2d) startPos endPos =
-    let h = heuristic endPos >> uint32
+    let h = heuristic endPos
     let possible = possibleMoves grid
     let start = (East, startPos)
     let openSet = BinomialHeapPQ.empty |> BinomialHeapPQ.insert (h startPos) start
@@ -148,7 +144,7 @@ let astar (grid: _ array2d) startPos endPos =
                     loop visited xs
                 else
                     let children = Map.tryFind x parents |> Option.defaultValue []
-                    Seq.length children |> dbg |> ignore
+                    // Seq.length children |> dbg |> ignore
                     loop (x :: visited) (children @ xs)
 
         loop [] ([ East; West; North; South ] |> List.map (fun d -> (d, endPos)))
@@ -246,7 +242,7 @@ let solve2 input =
     positions |> Set.count
 
 let test () =
-    let solution = (dayTestInputs 16).[0] |> parse1 |> solve2
+    let solution = (dayTestInputs 16).[1] |> parse1 |> solve2
     printfn $"{solution}"
 
 let part1 () =
