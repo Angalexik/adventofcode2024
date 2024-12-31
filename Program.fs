@@ -1,3 +1,3 @@
-﻿Day16.test ()
-// Day16.part1 ()
-// Day16.part2 ()
+﻿Day17.test ()
+Day17.part1 ()
+Day17.part2 ()
