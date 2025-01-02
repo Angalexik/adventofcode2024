@@ -62,7 +62,7 @@ let wideGridElement =
     | ']' -> WideBox BoxRight
     | _ -> invalidArg "_arg1" "Invalid char"
 
-let showWideGrid robotPos grid =
+let showWideGrid (builder: StringBuilder) robotPos grid =
     let a2d =
         grid
         |> Array2D.map (function
@@ -72,7 +72,6 @@ let showWideGrid robotPos grid =
             | WideBox BoxRight -> ']')
 
     a2d[fst robotPos, snd robotPos] <- '@'
-    let builder = new StringBuilder()
     let height = Array2D.length1 a2d
     let width = Array2D.length2 a2d
 
@@ -232,10 +231,20 @@ let solve1 (grid, moves, robotPos) =
     |> Seq.sum
 
 let solve2 (grid, moves, robotPos) =
+    let flipped a b c = showWideGrid a c b
+    let mutable iter = 0
     // This still feels really dirty...
-    moves |> Seq.fold (fun pos dir -> 
-        showWideGrid pos grid
-        executeMove2 grid pos dir) robotPos |> ignore
+    moves
+    |> Seq.fold
+        (fun pos dir ->
+            let builder = new StringBuilder()
+            builder.Append($"Next up: {iter.ToString()} - {dir.ToString()}") |> ignore
+            builder.AppendLine() |> ignore
+            showWideGrid builder pos grid
+            iter <- iter + 1
+            executeMove2 grid pos dir)
+        robotPos
+    |> flipped (new StringBuilder()) grid
 
     grid
     |> Array2D.mapi (fun y x e -> if e = WideBox BoxLeft then Some(y * 100 + x) else None)
@@ -244,7 +253,20 @@ let solve2 (grid, moves, robotPos) =
     |> Seq.sum
 
 let test () =
-    let grid, moves, robotPos = (dayTestInputs 15).[1] |> parse2
+    // expect 406
+    // let grid, moves, robotPos = (dayTestInputs 15).[3] |> parse2
+
+    // expect 509
+    // let grid, moves, robotPos = (dayTestInputs 15).[4] |> parse2
+
+    // expect 511
+    // let grid, moves, robotPos = (dayTestInputs 15).[5] |> parse2
+
+    // expect 816
+    // let grid, moves, robotPos = (dayTestInputs 15).[6] |> parse2
+
+    // expect 2339
+    let grid, moves, robotPos = (dayTestInputs 15).[7] |> parse2
     // let robotPos = executeMove2 grid robotPos moves.Head |> dbg
     // let moves = moves.Tail
     // let robotPos = executeMove2 grid robotPos moves.Head |> dbg
