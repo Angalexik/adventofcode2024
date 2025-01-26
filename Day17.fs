@@ -186,6 +186,54 @@ let solve2' (program, initState) =
     let offsets = Array.init length (fun i -> if i = (length - 1) then 3UL else 0UL)
     loop (length - 1) (length - 1) offsets
 
+let tryAgain (program, initState) =
+    let (==) a1 s2 =
+        Seq.length a1 = Seq.length s2 && Seq.forall2 (=) a1 s2
+
+    let last n xs = Seq.skip ((Seq.length xs) - n) xs
+
+    let mask l n = n &&& ~~~(~~~0UL <<< l)
+
+    let rec loop a i =
+        dbg a |> ignore
+        let cmpLen = (i + 1) |> dbg
+
+        if cmpLen > Array.length program then
+            a
+        else
+            let newA =
+                [ 0UL .. 0b111_111UL ]
+                |> List.map (flip (<<<) (3 * i) >> (|||) a)
+                |> List.map (fun newA ->
+                    newA, run program { initState with RegA = newA } |> List.rev)
+                |> List.filter (snd >> last cmpLen >> (==) (last cmpLen program))
+                |> List.minBy fst
+                |> (fst >> mask (3 * (i + 1)))
+
+            loop newA (i + 1)
+
+    loop 0UL 0
+
+let experiment (program, initState) =
+    let a = 0b000_011_000UL
+    // let a = 0b1_000UL
+
+    [ 0UL .. 0b111_111UL ]
+    // [ 0UL .. 0b111UL ]
+    |> List.map (flip (<<<) 6 >> (|||) 0b011_000UL)
+    |> List.map (fun a -> a, run program { initState with RegA = a } |> List.rev)
+    |> List.filter (fun (_, out) ->
+        // List.tryItem 0 out = Some 5UL
+        List.tryItem 1 out = Some 4UL
+        && List.tryItem 2 out = Some 3UL
+        && List.tryItem 3 out = Some 0UL)
+    |> List.map (fst >> (&&&) 0b111_111_111UL)
+    |> List.toArray
+    |> dbg
+    |> ignore
+
+    run program { initState with RegA = a } |> List.rev |> dbg
+
 // Multiplying initA by 8 prepends the same value to the input every time
 // Example program is some sort of weird base-8 thing
 // (8^2)×3+(8^3)×5+(8^4)×4+(8^5)×3 is answer
@@ -210,7 +258,9 @@ let solve2 (program, initState) =
     loop 0UL
 
 let test () =
-    let solution = (dayTestInputs 17).[1] |> parse1 |> solve1
+    // let solution = (dayTestInputs 17).[1] |> parse1 |> experiment
+    let solution = (dayTestInputs 17).[1] |> parse1 |> tryAgain
+    // let solution = (dayTestInputs 17).[1] |> parse1 |> solve1
     printfn $"{solution}"
 
 let part1 () =
