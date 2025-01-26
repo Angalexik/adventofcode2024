@@ -49,53 +49,6 @@ let shortestPath grid =
 
     bfs [] [ (0, 0) ] Map.empty
 
-let shortestPathLength grid =
-    let goal = (Array2D.length1 grid) - 1
-
-
-    let rec reconstruct parents length next =
-        match Map.find next parents with
-        | (0, 0) -> length
-        | nope -> reconstruct parents (length + 1) nope
-
-    let rec bfs visited toVisit parents =
-        match toVisit with
-        | [] -> reconstruct parents 1 (goal, goal)
-        | (x :: xs) ->
-            if List.contains x visited then
-                bfs visited xs parents
-            else
-                let neighbouring = neighbours grid x
-
-                bfs
-                    (x :: visited)
-                    (xs @ neighbouring)
-                    (Seq.fold
-                        (fun map neigh ->
-                            if Map.containsKey neigh map then
-                                map
-                            else
-                                Map.add neigh x map)
-                        parents
-                        neighbouring)
-
-    bfs [] [ (0, 0) ] Map.empty
-
-let exitReachable grid =
-    let goal = (Array2D.length1 grid) - 1
-
-    let rec bfs visited toVisit =
-        match toVisit with
-        | [] -> false
-        | ((y, x) :: _) when y = goal && x = goal -> true
-        | (v :: vs) ->
-            if List.contains v visited then
-                bfs visited vs
-            else
-                bfs (v :: visited) (vs @ neighbours grid v)
-
-    bfs [] [ (0, 0) ]
-
 let parse1 input =
     input
     |> Text.lines
@@ -106,7 +59,7 @@ let solve1 size dropped input =
     let mutable grid = Array2D.create size size true
     input |> Seq.take dropped |> Seq.iter (fun (x, y) -> grid[y, x] <- false)
 
-    shortestPathLength grid
+    shortestPath grid |> Option.get |> Seq.length
 
 let solve2 size input =
     let mutable grid = Array2D.create size size true
@@ -116,6 +69,7 @@ let solve2 size input =
 
         if List.contains (y, x) curPath then
             let newPath = shortestPath grid
+
             match newPath with
             | None -> (x, y)
             | Some p -> loop p bytes
