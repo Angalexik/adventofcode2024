@@ -1,0 +1,17 @@
+rrbgbr -> rrbg, br + rrbgb, r
+
+possible (str, ['a', 'b', 'ab']) = possible (str - 'a') + possible (str - 'b') + possible (str - 'ab')
+possible ('', _) = 0
+possible (impossible) = 0
+
+rrbgbr
+rrbg rrbgb
+rrb rrb rrbg
+r rr r rr rrb
+ø r ø r r r rr
+ø ø ø ø r
+ø
+
+
+possible ab
+possible a + possible ''
